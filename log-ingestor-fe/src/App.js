@@ -19,33 +19,46 @@ function App() {
 
 
 const getValue = (queryString)=>{
-  const regex = /"([^"]*)"/;
-  const match = regex.exec(queryString);
+  const regex = /"(.*?)"/g;
+  const matches = [];
 
-  if (match) {
+  let match;
+  while ((match = regex.exec(queryString)) !== null) {
       const value = match[1];
-      return value;
-  } else {
-      return null;
+      matches.push(value);
   }
+
+  return matches;
 }
 
 const getKeyword = (queryString)=> {
-    for (const keyword of keywords) {
-        if (queryString.includes(keyword)) {
-            return keyword;
-        }
+  const regex = /([\w]+)/g;
+  const matches = [];
+
+  let match;
+  while ((match = regex.exec(queryString)) !== null) {
+    const keyword = match[1];
+    if (keywords.includes(keyword)) {
+      matches.push(keyword);
     }
-    return null;
+  }
+  return matches;
 }
 
 const handleSearchQuery = async (query)=>{
-  let keyword = getKeyword(query);
-  if (keyword=="parentResourceId"){
-    keyword = "metadata.parentResourceId";
+  let keywords = getKeyword(query);
+  let values = getValue(query);
+  let queryUrl = `${apiUrl}`;
+  for(let i = 0; i < values.length; i++) {
+    if(i>=1){
+      queryUrl += "&";
+    }
+    if(keywords[i]=="parentResourceId"){
+      queryUrl +=  `metadata.parentResourceId=${values[i]}`;
+    }else{
+      queryUrl +=  `${keywords[i]}=${values[i]}`;
+    }
   }
-  const value = getValue(query);
-  const queryUrl = `${apiUrl}${keyword}=${value}`;
   const response = await fetch(queryUrl);
   const data = await response.json();
   setSearchLog(data);
